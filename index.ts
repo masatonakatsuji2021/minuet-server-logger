@@ -1,7 +1,32 @@
+/**
+ * MIT License
+ * 
+ * Copyright (c) 2024 Masato Nakatsuji
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ * 
+ */
+
 import * as fs from "fs";
+import * as path from "path";
 import { IncomingMessage, ServerResponse } from "http";
 import { MinuetServerModuleBase } from "minuet-server";
-import path = require("path");
 
 export interface MinuetLoggerOption {
     tempDir: string,
@@ -77,8 +102,18 @@ export class MinuetLogger {
         format = format.split("{remote-address}").join(req.socket.remoteAddress);
         format = format.split("{referer}").join(req.headers.referer);
         format = format.split("{user-agent}").join(req.headers["user-agent"]);
-        if (res.statusCode) format = format.split("{status-code}").join(res.statusCode.toString());
-        if (res.statusMessage) format = format.split("{status-message}").join(res.statusMessage.toString());
+        if (res.statusCode) {
+            format = format.split("{status-code}").join(res.statusCode.toString());
+        }
+        else {
+            format = format.split("{status-code}").join("200");
+        }
+        if (res.statusMessage) {
+            format = format.split("{status-message}").join(res.statusMessage.toString());
+        }
+        else {
+            format = format.split("{status-code}").join("");
+        }
         format = format.split("{message}").join(message);
         return format;
     }
@@ -91,6 +126,10 @@ export class MinuetServerModuleLogger extends MinuetServerModuleBase {
 
     public onBegin(): void {
         let init : MinuetLoggerOption = this.init;
+        if (!init.tempDir) {
+            init.tempDir = "logs";
+        }
+        init.tempDir = this.sector.root + "/" + init.tempDir;
         this.logger = new MinuetLogger(init);
     }
 
